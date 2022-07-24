@@ -72,3 +72,6 @@ pub fn app() -> Html {
     }
 }
 ```
+
+## Tauri
+See [Official docs](https://tauri.studio/docs/getting-started/beginning-tutorial#alternatively-install-tauri-cli-as-a-cargo-subcommand).

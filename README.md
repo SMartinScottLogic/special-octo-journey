@@ -6,14 +6,18 @@
 # Re-creation
 ## Frontend
 ### New package
+```
 cargo new --bin frontend
 cd frontend
 mkdir public
+```
 
 ### Install build setup
+```
 rustup target add wasm32-unknown-unknown
 cargo install trunk
 cargo install wasm-bindgen-cli
+```
 
 ### index.html
 ```html
@@ -112,7 +116,7 @@ cargo tauri dev
 
 ### Add PoC Tauri command:
 Open `src-tauri/src/main.rs`, add (below `main()` function):
-```
+```rs
 #[tauri::command]
 fn hello(name: &str) -> Result<String, String> {
   // This is a very simplistic example but it shows how to return a Result
@@ -126,7 +130,7 @@ fn hello(name: &str) -> Result<String, String> {
 ```
 
 Add the following in `main()`, before `.run(...)`:
-```
+```rs
     .invoke_handler(tauri::generate_handler![hello])
 ```
 
@@ -142,7 +146,7 @@ export async function invokeHello(name) {
 
 ### Add glue code to Rust
 Open `frontend/src/main.rs`, add:
-```
+```rs
 #[wasm_bindgen(module = "/public/glue.js")]
 extern "C" {
     #[wasm_bindgen(js_name = invokeHello, catch)]
@@ -159,14 +163,14 @@ cargo add js-sys
 ```
 
 Update `frontend/src/main.rs` with new imports:
-```
+```rs
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::window;
 ```
 
 ### Replace `app` function component
-```
+```rs
 #[function_component(App)]
 pub fn app() -> Html {
     let welcome = use_state_eq(|| "".to_string());

@@ -40,6 +40,11 @@ pub fn app() -> Html {
     }
 }
 
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
+struct Payload {
+    message: Vec<String>,
+}
+
 fn update_welcome_message(welcome: UseStateHandle<String>, name: String) {
     spawn_local(async move {
         // This will call our glue code all the way through to the tauri
@@ -47,7 +52,8 @@ fn update_welcome_message(welcome: UseStateHandle<String>, name: String) {
         // `Result<JsValue, JsValue>`.
         match hello(name).await {
             Ok(message) => {
-                welcome.set(message.as_string().unwrap());
+                let payload: Payload = serde_json::from_str(&message.as_string().unwrap()).unwrap();
+                welcome.set(payload.message.get(0).unwrap().to_owned());
             }
             Err(e) => {
                 let window = window().unwrap();

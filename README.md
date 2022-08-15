@@ -213,3 +213,9 @@ fn update_welcome_message(welcome: UseStateHandle<String>, name: String) {
     });
 }
 ```
+
+# Application
+```
+cd frontend/
+cargo add serde serde_json
+```

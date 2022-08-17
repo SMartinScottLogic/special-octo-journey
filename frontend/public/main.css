@@ -1,9 +1,25 @@
 body {
-    margin: 20px;
+    margin: 0px;
     background: #2d2d2d;
     color: white;
+    height: 100vh;
 }
 
 .heading {
     text-align: center;
+}
+
+.container {
+    display: flex;
+    height: 100vh;
+}
+
+.folder {
+    flex: 1 1 auto;
+}
+
+.file {
+    flex: 4 1 auto;
+    border-left: 1px solid gray;
+    height: 100vh;
 }

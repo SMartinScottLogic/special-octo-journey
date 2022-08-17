@@ -6,7 +6,7 @@ use web_sys::window;
 #[wasm_bindgen(module = "/public/glue.js")]
 extern "C" {
     #[wasm_bindgen(js_name = invokeHello, catch)]
-    pub async fn hello(name: String) -> Result<JsValue, JsValue>;
+    pub async fn hello(root: String) -> Result<JsValue, JsValue>;
 }
 
 fn main() {
@@ -15,45 +15,64 @@ fn main() {
 
 #[function_component(App)]
 pub fn app() -> Html {
-    let welcome = use_state_eq(|| "".to_string());
-    let name = use_state_eq(|| "World".to_string());
+    let entries = use_state_eq(Payload::default);
+    let name = use_state_eq(|| ".".to_string());
 
     // Execute tauri command via effects.
     // The effect will run every time `name` changes.
     {
-        let welcome = welcome.clone();
+        let entries = entries.clone();
         use_effect_with_deps(
             move |name| {
-                update_welcome_message(welcome, name.clone());
+                update_root_dir(entries, name.clone());
                 || ()
             },
             (*name).clone(),
         );
     }
 
-    let message = (*welcome).clone();
+    let mut entries = (*entries).clone().entries;
+    entries.sort_by(|a, b| a.1.cmp(&b.1));
+    let entries = entries.iter().map(|entry| if entry.0 {
+        html! {
+            <>
+            <li style="list-style-type: disclosure-closed;">{ entry.1.clone() }</li>
+            <ul></ul>
+            </>
+        }
+    } else {
+        html! {
+            <li>{ entry.1.clone() }</li>
+        }
+    }).collect::<Html>();
 
     html! {
-        <div>
-            <h2 class={"heading"}>{message}</h2>
+        <div class="container">
+        <div class="folder">
+            <h2 class={"heading"}>{{ "Test" }}</h2>
+            <ul>{entries}</ul>
+        </div>
+        <div class="file">
+            <h2>{{"Pane 2"}}</h2>
+        </div>
         </div>
     }
 }
 
-#[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 struct Payload {
-    message: Vec<String>,
+    entries: Vec<(bool, String)>,
 }
 
-fn update_welcome_message(welcome: UseStateHandle<String>, name: String) {
+fn update_root_dir(entries: UseStateHandle<Payload>, root: String) {
     spawn_local(async move {
         // This will call our glue code all the way through to the tauri
         // back-end command and return the `Result<String, String>` as
         // `Result<JsValue, JsValue>`.
-        match hello(name).await {
+        match hello(root).await {
             Ok(message) => {
                 let payload: Payload = serde_json::from_str(&message.as_string().unwrap()).unwrap();
-                welcome.set(payload.message.get(0).unwrap().to_owned());
+                entries.set(payload);
             }
             Err(e) => {
                 let window = window().unwrap();

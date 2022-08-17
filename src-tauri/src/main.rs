@@ -12,23 +12,24 @@ fn main() {
 
 #[derive(Clone, serde::Serialize)]
 struct Payload {
-  message: Vec<String>,
+  entries: Vec<(bool, String)>,
 }
 
 #[tauri::command]
-fn hello(name: &str) -> Result<String, String> {
+fn hello(root: &str) -> Result<String, String> {
   // This is a very simplistic example but it shows how to return a Result
   // and use it in the front-end.
-  if name.contains(' ') {
+  if root.contains(' ') {
     Err("Name should not contain spaces".to_string())
   } else {
-    let entry = match std::fs::read_dir(".") {
+    let entry = match std::fs::read_dir(root) {
       Ok(entry) => entry,
-      Err(e) => return Err(format!(r#"Failed to read dir "." : {}"#, e)),
+      Err(e) => return Err(format!(r#"Failed to read dir {} : {}"#, root, e)),
     };
-    let s = entry.flat_map(|e| e.map(|entry| entry.file_name()))
-        .map(|f| f.to_string_lossy().to_string())
+    let entries = entry.flat_map(|e| e.map(|entry| (entry.file_type().map(|t| t.is_dir()).unwrap_or(false), entry.file_name().to_string_lossy().to_string())))
         .collect();
-    Ok(serde_json::json!(Payload { message: s}).to_string())
+    let payload = serde_json::json!(Payload { entries }).to_string();
+    println!("root {root}, entries: {payload}");
+    Ok(payload)
   }
 }

@@ -1,6 +1,6 @@
 const invoke = window.__TAURI__.invoke
 
-export async function invokeHello(name) {
-    return await invoke("hello", {name: name});
+export async function invokeHello(root) {
+    return await invoke("hello", {root });
 }
 

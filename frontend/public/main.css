@@ -1,3 +1,5 @@
+@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css");
+
 body {
     margin: 0px;
     background: #2d2d2d;
@@ -22,4 +24,8 @@ body {
     flex: 4 1 auto;
     border-left: 1px solid gray;
     height: 100vh;
+}
+
+li {
+    list-style-type: none
 }

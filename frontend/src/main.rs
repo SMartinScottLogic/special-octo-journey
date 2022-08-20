@@ -1,3 +1,4 @@
+use bounce::{use_atom, use_atom_setter, Atom, BounceRoot};
 use std::cmp::Ordering;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::spawn_local;
@@ -8,14 +9,31 @@ use yew::prelude::*;
 extern "C" {
     #[wasm_bindgen(js_name = invokeReadDir, catch)]
     pub async fn js_read_dir(root: String) -> Result<JsValue, JsValue>;
+    #[wasm_bindgen(js_name = invokeReadFile, catch)]
+    pub async fn js_read_file(filename: String) -> Result<JsValue, JsValue>;
 }
 
 fn main() {
     yew::start_app::<App>();
 }
 
-#[function_component(App)]
-pub fn app() -> Html {
+#[function_component(Container)]
+pub fn container() -> Html {
+    let filename = use_atom::<FileView>();
+    let content = use_state_eq(String::default);
+
+    {
+        let content = content.clone();
+        use_effect_with_deps(
+            move |filename| {
+                if !filename.is_empty() {
+                    read_file(filename, move |c| content.set(c));
+                }
+                || ()
+            },
+            filename.filename.clone(),
+        );
+    }
     html! {
         <div class="container">
         <div class="folder">
@@ -24,8 +42,21 @@ pub fn app() -> Html {
         </div>
         <div class="file">
             <h2 class={"heading"}>{{"Pane 2"}}</h2>
+            {{ filename.filename.clone() }}
+        <pre>
+            {{ (*content).clone() }}
+        </pre>
         </div>
         </div>
+    }
+}
+
+#[function_component(App)]
+pub fn app() -> Html {
+    html! {
+        <BounceRoot>
+        <Container />
+        </BounceRoot>
     }
 }
 
@@ -42,16 +73,26 @@ pub struct FolderProps {
     pub open: bool,
 }
 
+#[derive(PartialEq, Atom, Default)]
+pub struct FileView {
+    filename: String,
+}
+impl From<String> for FileView {
+    fn from(filename: String) -> Self {
+        Self { filename }
+    }
+}
+
 #[function_component(File)]
 pub fn file(props: &FileProps) -> Html {
-    let fullname = format!("{}/{}", props.root, props.name);
+    let set_filename = use_atom_setter::<FileView>();
 
-    let file_click = Callback::from(move |_| {
-        let window = window().unwrap();
-        window
-            .alert_with_message(&format!("load: {}", fullname))
-            .unwrap();
-    });
+    let file_click = {
+        let fullname = format!("{}/{}", props.root, props.name);
+        Callback::from(move |_e: MouseEvent| {
+            set_filename(fullname.clone().into());
+        })
+    };
     html! {
         <li onclick={file_click}>{ props.name.clone() }</li>
     }
@@ -138,6 +179,28 @@ fn read_dir(entries: UseStateHandle<Payload>, root: String) {
             Ok(message) => {
                 let payload: Payload = serde_json::from_str(&message.as_string().unwrap()).unwrap();
                 entries.set(payload);
+            }
+            Err(e) => {
+                let window = window().unwrap();
+                window
+                    .alert_with_message(&format!("Error: {:?}", e))
+                    .unwrap();
+            }
+        }
+    });
+}
+
+fn read_file<F>(filename: &str, set_content: F)
+where
+    F: FnOnce(String) + 'static,
+{
+    let filename = filename.to_string();
+    spawn_local(async move {
+        match js_read_file(filename).await {
+            Ok(file_content) => {
+                let file_content = file_content.as_string().unwrap();
+
+                set_content(file_content);
             }
             Err(e) => {
                 let window = window().unwrap();

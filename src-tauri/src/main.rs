@@ -5,7 +5,7 @@
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![read_dir])
+        .invoke_handler(tauri::generate_handler![read_dir, read_file])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -33,4 +33,10 @@ fn read_dir(root: &str) -> Result<String, String> {
         .collect();
     let payload = serde_json::json!(Payload { entries }).to_string();
     Ok(payload)
+}
+
+#[tauri::command]
+fn read_file(filename: &str) -> Result<String, String> {
+    std::fs::read_to_string(filename)
+        .map_err(|e| format!(r#"Failed to read file {}: {}"#, filename, e))
 }

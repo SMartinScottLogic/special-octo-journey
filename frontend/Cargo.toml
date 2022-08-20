@@ -13,3 +13,5 @@ wasm-bindgen = "0.2.82"
 wasm-bindgen-futures = "0.4.32"
 web-sys = "0.3.59"
 yew = "0.19.3"
+
+bounce = "0.3.0"             # The uncomplicated state management library for Yew.

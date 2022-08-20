@@ -3,6 +3,9 @@
     windows_subsystem = "windows"
 )]
 
+use std::fs::File;
+use std::io::Read;
+
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![read_dir, read_file])
@@ -37,6 +40,10 @@ fn read_dir(root: &str) -> Result<String, String> {
 
 #[tauri::command]
 fn read_file(filename: &str) -> Result<String, String> {
-    std::fs::read_to_string(filename)
-        .map_err(|e| format!(r#"Failed to read file {}: {}"#, filename, e))
+    let mut file = File::open(filename).map_err(|e| format!(r#"Failed to open '{}': {}"#, filename, e))?;
+    let mut buf = vec![];
+    file.read_to_end (&mut buf).map_err(|e| format!(r#"Failed to read '{}': {}"#, filename, e))?;
+    let contents = String::from_utf8_lossy (&buf);
+
+    Ok(contents.to_string())
 }

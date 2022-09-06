@@ -18,12 +18,14 @@ body {
 
 .folder {
     flex: 1 1 auto;
+    overflow-y: scroll;
 }
 
 .file {
     flex: 4 1 auto;
     border-left: 1px solid gray;
     height: 100vh;
+    overflow-y: scroll;
 }
 
 li {
